@@ -1,5 +1,5 @@
 # Start from your current final image
-FROM dockerdex.umcn.nl:5005/diag/final-image:latest 
+FROM dockerdex.umcn.nl:5005/diag/base-images:pathology-pt2.7.1
 
 USER root
 
