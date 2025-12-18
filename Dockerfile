@@ -1,35 +1,25 @@
-# 1. Start from your existing final image
-FROM dockerdex.umcn.nl:5005/diag/base-images:pathology-pt2.7.1
+# Start from your current final image
+FROM dockerdex.umcn.nl:5005/diag/final-image:latest 
 
 USER root
 
-# 2. Copy your environment definition
-# We use a requirements.txt style for direct pip installation to the system python
-COPY env.yml /tmp/environment.yml
+# 1. Add the new requirements
+COPY requirements-panther.txt /root/python-packages/requirements-panther.txt
 
-# 3. Install the panther dependencies 
-# We use the existing python3.11 from the base image
-RUN pip3 install --no-cache-dir \
-    numpy<2 \
-    ecos==2.0.14 \
-    einops==0.8.0 \
-    faiss-gpu==1.7.2 \
-    h5py==3.11.0 \
-    huggingface-hub==0.23.4 \
-    monai \
-    albumentations \
-    osqp==0.6.7.post0 \
-    scikit-survival==0.23.0 \
-    transformers==4.42.3 \
-    torch==2.3.1 \
-    # Add any other specific versions from your original list here
-    && rm -rf ~/.cache/pip
+# 2. Sync requirements
+# We use pip-sync if you have a compiled .txt, or simply pip install.
+# Since we are adding to an existing environment, 'pip install' is safer 
+# to avoid uninstalling the base pathology tools.
+RUN pip3 install --no-cache-dir -r /root/python-packages/requirements-panther.txt
 
-# 4. Verify ASAP is still linked
-# The parent image already sets up the .pth file, but we'll ensure 
-# the new packages haven't shadowed it.
-RUN python3 -c "import asap; print('ASAP version:', asap.__version__)" || echo "ASAP link check skipped"
+# 3. Fix ASAP for Python 3.11 (Confirmation)
+# Your FINAL DOCKER already does this, but we'll ensure it's robust:
+RUN SITE_PACKAGES=`python3 -c "import sysconfig; print(sysconfig.get_paths()['purelib'])"` && \
+    printf "/opt/ASAP/bin/\n" > "${SITE_PACKAGES}/asap.pth"
 
-# 5. Set user back to 'user' for safety
+# 4. Final Smoke Test
+# This ensures ASAP and Torch (CUDA) are both working in the same env
+RUN python3 -c "import asap; import torch; print(f'ASAP Loaded. CUDA Available: {torch.cuda.is_available()}')"
+
 WORKDIR /home/user
 USER user
