@@ -4,7 +4,7 @@ FROM dockerdex.umcn.nl:5005/diag/final-image:latest
 USER root
 
 # 1. Add the new requirements
-COPY requirements-panther.txt /root/python-packages/requirements-panther.txt
+COPY requirements.txt /root/python-packages/requirements-panther.txt
 
 # 2. Sync requirements
 # We use pip-sync if you have a compiled .txt, or simply pip install.
